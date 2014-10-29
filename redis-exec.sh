@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
-# https://collectd.org/wiki/index.php/Plugin:exec-redis.sh
+#
+# Pull Redis stats to Collectd
+#
+# Basics from https://collectd.org/wiki/index.php/Plugin:exec-redis.sh
+#
+# (c) 2014, Benjamin Dos Santos <benjamin.dossantos@gmail.com>
+# https://github.com/bdossantos/collectd-plugins
+#
 
 HOSTNAME="${COLLECTD_HOSTNAME:-$(hostname -f)}"
 INTERVAL="${COLLECTD_INTERVAL:-10}"
