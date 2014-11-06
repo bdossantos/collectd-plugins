@@ -19,6 +19,7 @@ HOSTNAME = ENV['COLLECTD_HOSTNAME'] || `hostname -f`.chomp
 INTERVAL = ENV['COLLECTD_INTERVAL'] || 10
 
 options = Struct.new('Options', :host, :user, :password).new
+options.host = '127.0.0.1'
 options.user = ENV['COLLECTD_MONGODB_USER'] || 'monitoring'
 options.password = ENV['COLLECTD_MONGODB_PASSWORD'] || nil
 
