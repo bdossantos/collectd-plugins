@@ -13,8 +13,6 @@ require 'net/http'
 require 'json'
 require 'uri'
 
-STDOUT.sync = true
-
 HOSTNAME = ENV['COLLECTD_HOSTNAME'] || `hostname -f`.chomp
 INTERVAL = ENV['COLLECTD_INTERVAL'] || 10
 
@@ -54,32 +52,39 @@ rescue OptionParser::InvalidOption, OptionParser::MissingArgument => e
   exit 3
 end
 
-uri = URI.parse("http://#{options.host}:28017/_status")
-http = Net::HTTP.new(uri.host, uri.port)
+begin
+  STDOUT.sync = true
 
-request = Net::HTTP::Get.new(uri.request_uri)
-request.basic_auth(options.user, options.password) if options.password
+  while true do
+    uri = URI.parse("http://#{options.host}:28017/_status")
+    http = Net::HTTP.new(uri.host, uri.port)
 
-response = http.request(request)
-raise 'Could not fetch MongoDB server status' if response.code.to_i != 200
-status = JSON.parse(response.body)['serverStatus']
+    request = Net::HTTP::Get.new(uri.request_uri)
+    request.basic_auth(options.user, options.password) if options.password
 
-loop do
-  status['opcounters'].each do |k, v|
-    puts "PUTVAL #{HOSTNAME}/mongodb/opcounters/#{k} interval=#{INTERVAL} N:#{v}"
+    response = http.request(request)
+    raise 'Could not fetch MongoDB server status' if response.code.to_i != 200
+    status = JSON.parse(response.body)['serverStatus']
+
+    timestamp = Time.now.to_i
+
+    status['opcounters'].each do |k, v|
+      STDOUT.puts "PUTVAL #{HOSTNAME}/mongodb/counter-opcounters_#{k} interval=#{INTERVAL} #{timestamp}:#{v}"
+    end
+
+    status['globalLock']['currentQueue'].each do |k, v|
+      STDOUT.puts "PUTVAL #{HOSTNAME}/mongodb/counter-globalLock_#{k} interval=#{INTERVAL} #{timestamp}:#{v}"
+    end
+
+    status['indexCounters'].each do |k, v|
+      STDOUT.puts "PUTVAL #{HOSTNAME}/mongodb/counter-indexCounters_#{k} interval=#{INTERVAL} #{timestamp}:#{v}"
+    end
+
+    status['mem'].each do |k, v|
+      next if k == 'supported'
+      STDOUT.puts "PUTVAL #{HOSTNAME}/mongodb/bytes-mem_#{k} interval=#{INTERVAL} #{timestamp}:#{v}"
+    end
+
+    sleep INTERVAL
   end
-
-  status['globalLock']['currentQueue'].each do |k, v|
-    puts "PUTVAL #{HOSTNAME}/mongodb/globalLock/#{k} interval=#{INTERVAL} N:#{v}"
-  end
-
-  status['indexCounters'].each do |k, v|
-    puts "PUTVAL #{HOSTNAME}/mongodb/indexCounters/#{k} interval=#{INTERVAL} N:#{v}"
-  end
-
-  status['mem'].each do |k, v|
-    puts "PUTVAL #{HOSTNAME}/mongodb/mem/#{k} interval=#{INTERVAL} N:#{v}"
-  end
-
-  sleep INTERVAL
 end
