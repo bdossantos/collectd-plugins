@@ -21,6 +21,9 @@ while true; do
   uptime=$(echo "$info" | awk -F : '$1 == "uptime_in_seconds" {print $2}')
   used_memory=$(echo "$info" | awk -F ":" '$1 == "used_memory" {print $2}'|sed -e 's/\r//')
   rdb_changes_since_last_save=$(echo "$info" | awk -F : '$1 == "rdb_changes_since_last_save" {print $2}')
+  evicted_keys=$(echo "$info" | awk -F : '$1 == "evicted_keys" {print $2}')
+  used_memory=$(echo "$info" | awk -F : '$1 == "used_memory" {print $2}')
+  total_connections_received=$(echo "$info" | awk -F : '$1 == "total_connections_received" {print $2}')
   total_commands_processed=$(echo "$info" | awk -F : '$1 == "total_commands_processed" {print $2}')
   keys=$(echo "$info"|egrep -e "^db0" | sed -e 's/^.\+:keys=//'|sed -e 's/,.\+//')
 
@@ -29,6 +32,9 @@ while true; do
   echo "PUTVAL ${HOSTNAME}/redis-${PORT}/gauge-uptime_in_seconds interval=${INTERVAL} ${timestamp}:${uptime}"
   echo "PUTVAL ${HOSTNAME}/redis-${PORT}/gauge-used_memory interval=${INTERVAL} ${timestamp}:${used_memory}"
   echo "PUTVAL ${HOSTNAME}/redis-${PORT}/gauge-rdb_changes_since_last_save interval=${INTERVAL} ${timestamp}:${rdb_changes_since_last_save}"
+  echo "PUTVAL ${HOSTNAME}/redis-${PORT}/gauge-evicted_keys interval=${INTERVAL} ${timestamp}:${evicted_keys}"
+  echo "PUTVAL ${HOSTNAME}/redis-${PORT}/bytes-used_memory interval=${INTERVAL} ${timestamp}:${used_memory}"
+  echo "PUTVAL ${HOSTNAME}/redis-${PORT}/counter-total_connections_received interval=${INTERVAL} ${timestamp}:${total_connections_received}"
   echo "PUTVAL ${HOSTNAME}/redis-${PORT}/counter-total_commands_processed interval=${INTERVAL} ${timestamp}:${total_commands_processed}"
   echo "PUTVAL ${HOSTNAME}/redis-${PORT}/counter-items-db0 interval=${INTERVAL} ${timestamp}:${keys}"
 
